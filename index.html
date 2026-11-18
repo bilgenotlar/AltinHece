@@ -179,6 +179,13 @@
             padding: 7px 12px;
             border-radius: 10px;
             font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .trophy-shelf.celebrate-trophy {
+            background: rgba(250, 204, 21, 0.18);
+            border-color: #fde047;
+            box-shadow: 0 0 18px rgba(250, 204, 21, 0.28);
         }
 
         .trophy-label {
@@ -246,7 +253,7 @@
             display: inline-block;
         }
 
-        /* Current Word Display */
+        /* Current Word / Victory Display Bar */
         .word-preview-bar {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
@@ -256,6 +263,19 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 14px;
+            transition: all 0.3s ease;
+        }
+
+        .word-preview-bar.victory-bar {
+            background: rgba(16, 185, 129, 0.14);
+            border-color: rgba(16, 185, 129, 0.45);
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.18);
+        }
+
+        .word-preview-bar.victory-bar.trophy-bar {
+            background: rgba(250, 204, 21, 0.16);
+            border-color: rgba(250, 204, 21, 0.55);
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.22);
         }
 
         .current-word-text {
@@ -263,6 +283,17 @@
             font-weight: 800;
             letter-spacing: 2px;
             color: var(--accent-blue);
+        }
+
+        .victory-title-text {
+            font-size: 1.02rem;
+            font-weight: 800;
+            color: #34d399;
+            letter-spacing: 0.2px;
+        }
+
+        .victory-bar.trophy-bar .victory-title-text {
+            color: #fde047;
         }
 
         .word-validity {
@@ -297,6 +328,16 @@
             border: 1px solid var(--border-subtle);
             box-shadow: var(--shadow-soft);
             touch-action: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .board-wrapper.board-completed {
+            border-color: rgba(16, 185, 129, 0.45);
+            box-shadow: 0 12px 28px -6px rgba(16, 185, 129, 0.22);
+        }
+
+        .board-wrapper.board-completed .tile:not(.seal) {
+            cursor: default;
         }
 
         .grid-5x5 {
@@ -365,14 +406,12 @@
             gap: 3px;
         }
 
-        /* Kısmi İlerleme (Örn: 1/2 tamamlandığında) */
         .tile.seal.partial {
             background: #3d2422;
             border: 2px solid #f59e0b;
             box-shadow: 0 0 12px rgba(245, 158, 11, 0.25), inset 0 0 8px rgba(245, 158, 11, 0.12);
         }
 
-        /* Tamamlandı */
         .tile.seal.unlocked {
             background: rgba(16, 185, 129, 0.16);
             border: 2px solid #10b981;
@@ -405,7 +444,6 @@
             border-color: rgba(251, 191, 36, 0.75);
         }
 
-        /* Dolu Soket Renkleri (Hedef Elementin Renginde Parlar) */
         .socket-pip.filled.tier-1 {
             background: #ea580c;
             border-color: #fdba74;
@@ -474,17 +512,21 @@
             gap: 8px;
         }
 
+        .controls-row.next-level-mode {
+            grid-template-columns: 1fr;
+        }
+
         button {
             border: none;
             border-radius: 12px;
-            padding: 12px 10px;
+            padding: 13px 12px;
             font-weight: 700;
             font-size: 0.88rem;
             cursor: pointer;
             transition: all 0.15s ease;
         }
 
-        button:active { transform: scale(0.96); }
+        button:active { transform: scale(0.97); }
 
         .btn-clear {
             background: var(--bg-elevated);
@@ -509,6 +551,15 @@
             border: 1px solid rgba(251, 191, 36, 0.25);
         }
 
+        .btn-next-level {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: #064e3b;
+            font-size: 1.02rem;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.45);
+        }
+
         .feedback-line {
             text-align: center;
             font-size: 0.84rem;
@@ -516,7 +567,7 @@
             color: var(--text-secondary);
         }
 
-        /* Modal Overlay */
+        /* Yalnızca Hamle Bittiğinde Açılan Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -547,13 +598,8 @@
             box-shadow: var(--shadow-soft);
         }
 
-        .modal-trophy-big {
-            font-size: 3.2rem;
-            animation: trophyGlow 1.6s infinite ease-in-out;
-        }
-
         .modal-box h2 {
-            color: var(--accent-blue);
+            color: #f43f5e;
             font-size: 1.4rem;
         }
 
@@ -595,7 +641,7 @@
         </div>
 
         <!-- Kupa Vitrini -->
-        <div class="trophy-shelf">
+        <div class="trophy-shelf" id="trophyShelf">
             <span class="trophy-label">🏆 Kupa Vitrini</span>
             <div class="trophy-icons" id="trophyIcons"></div>
         </div>
@@ -614,7 +660,8 @@
         </div>
     </div>
 
-    <div class="word-preview-bar">
+    <!-- Kelime Önizleme / Zafer Şeridi -->
+    <div class="word-preview-bar" id="wordPreviewBar">
         <span class="current-word-text" id="currentWordDisplay">...</span>
         <span class="word-validity valid-no" id="wordValidityBadge">En az 3 harf</span>
     </div>
@@ -627,31 +674,29 @@
         Harflerin üzerinden sürükleyerek veya sırayla tıklayarak kelime kur.
     </div>
 
-    <div class="controls-row">
+    <!-- Alt Kontrol Çubuğu -->
+    <div class="controls-row" id="controlsRow">
         <button class="btn-clear" onclick="clearSelection()">Temizle</button>
         <button class="btn-submit" id="submitBtn" onclick="submitWord()" disabled>Dönüştür (Onayla)</button>
         <button class="btn-shuffle" onclick="alchemyShuffle()">Karıştır (-1 Hamle)</button>
     </div>
 </div>
 
-<!-- Bölüm Sonu Modalı -->
-<div class="modal-overlay" id="endModal">
+<!-- Hamle Bittiğinde Açılan Modal -->
+<div class="modal-overlay" id="failModal">
     <div class="modal-box">
-        <div class="modal-trophy-big" id="modalTrophyIcon" style="display:none;">🏆</div>
-        <h2 id="modalTitle">Bölüm Tamamlandı!</h2>
-        <p id="modalDesc">Tüm mühürler başarıyla çözüldü.</p>
-        <button class="modal-btn" id="modalActionBtn">Sonraki Bölüme Geç</button>
+        <h2>Hamle Hakkın Bitti!</h2>
+        <p id="failModalDesc">Mühürleri açmak için hamlelerin yetmedi. Tekrar deneyebilirsin.</p>
+        <button class="modal-btn" id="failModalActionBtn">Bölümü Tekrar Oyna</button>
     </div>
 </div>
 
 <script>
     const SAVE_KEY = "harf_simyasi_save_v1";
 
-    // Türkçe harf frekans havuzları
     const VOWELS = "AAAAEEEEİİİUUOOIÜÖ";
     const CONSONANTS = "KKKKLLLLMMMMNNNNRRRRSSSSTTTTYYYYBBBBDDDDÇÇGGPPŞŞVVZZCH";
 
-    // Yedek mini sözlük
     let dictionary = new Set([
         "KUL", "MART", "SEV", "KARA", "MASA", "KASA", "ELMA", "YEL", "SEL", "KEL", "TEL",
         "KOL", "YOL", "SOL", "BOL", "DOL", "GÖL", "ÇÖL", "KÖY", "SÜT", "YÜN", "GÜN", "DÜN",
@@ -669,6 +714,8 @@
     let totalScore = 0;
     let trophies = 0;
     let isLevelCompleted = false;
+    let earnedTrophyThisLevel = false;
+    let lastLevelBonus = 0;
     let blastCoord = null;
 
     function normalizeTR(str) {
@@ -682,7 +729,9 @@
             movesLeft,
             totalScore,
             trophies,
-            isLevelCompleted
+            isLevelCompleted,
+            earnedTrophyThisLevel,
+            lastLevelBonus
         };
         try {
             localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -704,20 +753,25 @@
             totalScore = state.totalScore || 0;
             trophies = state.trophies || 0;
             isLevelCompleted = !!state.isLevelCompleted;
+            earnedTrophyThisLevel = !!state.earnedTrophyThisLevel;
+            lastLevelBonus = state.lastLevelBonus || 0;
             selectedPath = [];
             blastCoord = null;
 
             checkSeals();
             renderBoard();
             updateUI();
-            updateWordPreview();
 
             if (isLevelCompleted) {
-                showEndModal(true, true);
-            } else if (movesLeft <= 0) {
-                showEndModal(false, true);
+                enterVictoryState(true);
             } else {
-                setFeedback(`Bölüm ${currentLevel} kaldığın yerden yüklendi.`, "#38bdf8");
+                resetControlsToPlayMode();
+                updateWordPreview();
+                if (movesLeft <= 0) {
+                    showFailModal();
+                } else {
+                    setFeedback(`Bölüm ${currentLevel} kaldığın yerden yüklendi.`, "#38bdf8");
+                }
             }
             return true;
         } catch (e) {
@@ -869,7 +923,9 @@
             const statusEl = document.getElementById('dictStatus');
             statusEl.className = 'dict-status ready';
             statusEl.innerHTML = `✓ ${dictionary.size.toLocaleString('tr-TR')} Kelime`;
-            updateWordPreview();
+            if (!isLevelCompleted) {
+                updateWordPreview();
+            }
         }
     }
 
@@ -880,6 +936,8 @@
         selectedPath = [];
         blastCoord = null;
         isLevelCompleted = false;
+        earnedTrophyThisLevel = false;
+        lastLevelBonus = 0;
 
         grid = [];
         for (let r = 0; r < 5; r++) {
@@ -907,11 +965,13 @@
         }
 
         checkSeals();
+        resetControlsToPlayMode();
         renderBoard();
         updateUI();
         updateWordPreview();
         saveGameState();
-        document.getElementById('endModal').classList.remove('active');
+        document.getElementById('failModal').classList.remove('active');
+        setFeedback("Harflerin üzerinden sürükleyerek veya sırayla tıklayarak kelime kur.", "#94a3b8");
     }
 
     function checkSeals() {
@@ -943,7 +1003,14 @@
 
     function renderBoard() {
         const boardEl = document.getElementById('gridBoard');
+        const boardWrapper = document.getElementById('boardWrapper');
         boardEl.innerHTML = '';
+
+        if (isLevelCompleted) {
+            boardWrapper.classList.add('board-completed');
+        } else {
+            boardWrapper.classList.remove('board-completed');
+        }
 
         const tierNames = ["", "BRZ", "GMŞ", "ALT"];
         const sealTierNames = ["", "Bronz", "Gümüş", "Altın"];
@@ -960,7 +1027,6 @@
                     const isPartial = !cell.unlocked && filledCount > 0;
                     const stateClass = cell.unlocked ? 'unlocked' : (isPartial ? 'partial' : '');
 
-                    // Soket noktalarını (pip) oluştur
                     let pipsHTML = '';
                     for (let i = 0; i < cell.reqCount; i++) {
                         const isFilled = i < filledCount;
@@ -996,6 +1062,7 @@
 
     const boardWrapper = document.getElementById('boardWrapper');
     boardWrapper.addEventListener('touchstart', (e) => {
+        if (isLevelCompleted) return;
         const touch = e.touches[0];
         const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.tile');
         if (target && target.dataset.r !== undefined) {
@@ -1005,7 +1072,7 @@
     }, { passive: false });
 
     boardWrapper.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
+        if (!isDragging || isLevelCompleted) return;
         e.preventDefault();
         const touch = e.touches[0];
         const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.tile');
@@ -1045,7 +1112,7 @@
     }
 
     function continueSelection(r, c) {
-        if (!isDragging || grid[r][c].isSeal) return;
+        if (!isDragging || grid[r][c].isSeal || isLevelCompleted) return;
         if (selectedPath.length === 0) return;
 
         const last = selectedPath[selectedPath.length - 1];
@@ -1067,6 +1134,7 @@
     }
 
     function clearSelection() {
+        if (isLevelCompleted) return;
         selectedPath = [];
         renderBoard();
         updateWordPreview();
@@ -1077,10 +1145,21 @@
     }
 
     function updateWordPreview() {
+        if (isLevelCompleted) return;
+
+        const previewBar = document.getElementById('wordPreviewBar');
+        previewBar.className = 'word-preview-bar';
+        previewBar.innerHTML = `
+            <span class="current-word-text" id="currentWordDisplay">...</span>
+            <span class="word-validity valid-no" id="wordValidityBadge">En az 3 harf</span>
+        `;
+
         const word = getCurrentWord();
         const wordEl = document.getElementById('currentWordDisplay');
         const badgeEl = document.getElementById('wordValidityBadge');
         const submitBtn = document.getElementById('submitBtn');
+
+        if (!submitBtn) return;
 
         if (word.length === 0) {
             wordEl.textContent = "...";
@@ -1113,6 +1192,7 @@
     }
 
     function submitWord() {
+        if (isLevelCompleted) return;
         const word = getCurrentWord();
         if (word.length < 3 || !dictionary.has(word)) return;
 
@@ -1161,25 +1241,82 @@
         selectedPath = [];
 
         const allSealsUnlocked = checkSeals();
+
         if (allSealsUnlocked) {
             isLevelCompleted = true;
-        }
+            lastLevelBonus = movesLeft * 50;
+            totalScore += lastLevelBonus;
 
-        renderBoard();
-        updateUI();
-        updateWordPreview();
-        saveGameState();
+            if (currentLevel % 5 === 0 && trophies < Math.floor(currentLevel / 5)) {
+                trophies = Math.floor(currentLevel / 5);
+                earnedTrophyThisLevel = true;
+            }
 
-        setFeedback(`"${word}" dönüştürüldü! (+${gainedPoints} Puan${bonusMsg})`, "#38bdf8");
+            renderBoard();
+            updateUI();
+            enterVictoryState(false);
+            saveGameState();
+        } else {
+            renderBoard();
+            updateUI();
+            updateWordPreview();
+            saveGameState();
+            setFeedback(`"${word}" dönüştürüldü! (+${gainedPoints} Puan${bonusMsg})`, "#38bdf8");
 
-        if (allSealsUnlocked) {
-            setTimeout(() => showEndModal(true, false), 450);
-        } else if (movesLeft <= 0) {
-            setTimeout(() => showEndModal(false, false), 450);
+            if (movesLeft <= 0) {
+                setTimeout(() => showFailModal(), 400);
+            }
         }
     }
 
+    // 1. Yöntem: Ekranı karartmadan zafer durumuna geçiş
+    function enterVictoryState(fromRestore = false) {
+        const previewBar = document.getElementById('wordPreviewBar');
+        const controlsRow = document.getElementById('controlsRow');
+        const trophyShelf = document.getElementById('trophyShelf');
+
+        if (earnedTrophyThisLevel) {
+            previewBar.className = 'word-preview-bar victory-bar trophy-bar';
+            previewBar.innerHTML = `
+                <span class="victory-title-text">🏆 ${currentLevel}. Bölüm Ustası — Yeni Kupa!</span>
+                <span class="word-validity valid-bonus">+${lastLevelBonus} Bonus</span>
+            `;
+            trophyShelf.classList.add('celebrate-trophy');
+            setFeedback(`Tebrikler! ${trophies}. Altın Simya Kupasını kazandın! Tahtanı inceleyip devam edebilirsin.`, "#fde047");
+        } else {
+            previewBar.className = 'word-preview-bar victory-bar';
+            previewBar.innerHTML = `
+                <span class="victory-title-text">🎉 Bölüm ${currentLevel} Tamamlandı!</span>
+                <span class="word-validity valid-yes">+${lastLevelBonus} Bonus</span>
+            `;
+            trophyShelf.classList.remove('celebrate-trophy');
+            setFeedback("Tüm mühürler çözüldü! Tahtanı inceleyebilir veya sonraki bölüme geçebilirsin.", "#34d399");
+        }
+
+        // Alt kontrol çubuğunu tek geniş "Sonraki Bölüme Geç" butonuna dönüştür
+        controlsRow.className = 'controls-row next-level-mode';
+        controlsRow.innerHTML = `
+            <button class="btn-next-level" onclick="initLevel(${currentLevel + 1})">
+                Sonraki Bölüme Geç (Bölüm ${currentLevel + 1}) ➔
+            </button>
+        `;
+    }
+
+    function resetControlsToPlayMode() {
+        const controlsRow = document.getElementById('controlsRow');
+        const trophyShelf = document.getElementById('trophyShelf');
+        trophyShelf.classList.remove('celebrate-trophy');
+
+        controlsRow.className = 'controls-row';
+        controlsRow.innerHTML = `
+            <button class="btn-clear" onclick="clearSelection()">Temizle</button>
+            <button class="btn-submit" id="submitBtn" onclick="submitWord()" disabled>Dönüştür (Onayla)</button>
+            <button class="btn-shuffle" onclick="alchemyShuffle()">Karıştır (-1 Hamle)</button>
+        `;
+    }
+
     function alchemyShuffle() {
+        if (isLevelCompleted) return;
         if (movesLeft <= 1) {
             setFeedback("Karıştırmak için en az 2 hamle hakkın olmalı!", "#f43f5e");
             return;
@@ -1246,52 +1383,13 @@
         el.style.color = color;
     }
 
-    function showEndModal(isWin, fromRestore = false) {
-        const modal = document.getElementById('endModal');
-        const title = document.getElementById('modalTitle');
-        const desc = document.getElementById('modalDesc');
-        const btn = document.getElementById('modalActionBtn');
-        const trophyIcon = document.getElementById('modalTrophyIcon');
+    function showFailModal() {
+        const modal = document.getElementById('failModal');
+        const desc = document.getElementById('failModalDesc');
+        const btn = document.getElementById('failModalActionBtn');
 
-        trophyIcon.style.display = 'none';
-
-        if (isWin) {
-            let earnedTrophyNow = false;
-            if (!fromRestore) {
-                const bonus = movesLeft * 50;
-                totalScore += bonus;
-
-                if (currentLevel % 5 === 0 && trophies < Math.floor(currentLevel / 5)) {
-                    trophies = Math.floor(currentLevel / 5);
-                    earnedTrophyNow = true;
-                }
-                updateUI();
-                saveGameState();
-            } else {
-                earnedTrophyNow = (currentLevel % 5 === 0);
-            }
-
-            if (earnedTrophyNow) {
-                trophyIcon.style.display = 'block';
-                title.textContent = `${currentLevel}. Bölüm Ustası — Yeni Kupa!`;
-                title.style.color = "#fde047";
-                desc.textContent = `Harika! ${currentLevel} bölümü tamamlayarak ${trophies}. Altın Simya Kupasını kazandın! Toplam Skor: ${totalScore}`;
-            } else {
-                title.textContent = `Bölüm ${currentLevel} Tamamlandı!`;
-                title.style.color = "#34d399";
-                desc.textContent = `Mühürler çözüldü! Toplam Skor: ${totalScore}`;
-            }
-
-            btn.textContent = `Bölüm ${currentLevel + 1}'e Geç`;
-            btn.onclick = () => initLevel(currentLevel + 1);
-        } else {
-            title.textContent = "Hamle Hakkın Bitti!";
-            title.style.color = "#f43f5e";
-            desc.textContent = `Bölüm ${currentLevel} mühürlerini açmak için hamlelerin yetmedi. Tekrar deneyebilirsin.`;
-            btn.textContent = "Bölümü Tekrar Oyna";
-            btn.onclick = () => initLevel(currentLevel);
-        }
-
+        desc.textContent = `Bölüm ${currentLevel} mühürlerini açmak için hamlelerin yetmedi. Tekrar deneyebilirsin.`;
+        btn.onclick = () => initLevel(currentLevel);
         modal.classList.add('active');
     }
 
