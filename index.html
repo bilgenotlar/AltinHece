@@ -316,7 +316,7 @@
             justify-content: center;
             position: relative;
             cursor: pointer;
-            transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.25s ease;
+            transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.25s ease, border 0.25s ease;
             border: 2px solid transparent;
         }
 
@@ -355,31 +355,91 @@
             animation: alchemyPulse 0.55s ease-out;
         }
 
-        /* Mühürlü Kare */
+        /* Mühürlü Kare — Seçenek 3 (Soket Noktaları + Kenarlık İlerlemesi + Dinamik Sayaç) */
         .tile.seal {
             background: var(--el-seal-bg);
             border: 2px dashed var(--el-seal-border);
             cursor: default;
-            padding: 4px;
+            padding: 4px 2px;
             text-align: center;
+            gap: 3px;
         }
 
+        /* Kısmi İlerleme (Örn: 1/2 tamamlandığında) */
+        .tile.seal.partial {
+            background: #3d2422;
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.25), inset 0 0 8px rgba(245, 158, 11, 0.12);
+        }
+
+        /* Tamamlandı */
         .tile.seal.unlocked {
-            background: rgba(16, 185, 129, 0.15);
+            background: rgba(16, 185, 129, 0.16);
             border: 2px solid #10b981;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.28);
         }
 
         .seal-icon {
-            font-size: 1.25rem;
+            font-size: 1.05rem;
             line-height: 1;
         }
 
+        .seal-sockets {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin: 1px 0;
+        }
+
+        .socket-pip {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(253, 164, 175, 0.65);
+            background: transparent;
+            transition: all 0.25s ease;
+        }
+
+        .tile.seal.partial .socket-pip {
+            border-color: rgba(251, 191, 36, 0.75);
+        }
+
+        /* Dolu Soket Renkleri (Hedef Elementin Renginde Parlar) */
+        .socket-pip.filled.tier-1 {
+            background: #ea580c;
+            border-color: #fdba74;
+            box-shadow: 0 0 6px #ea580c;
+        }
+
+        .socket-pip.filled.tier-2 {
+            background: #e2e8f0;
+            border-color: #ffffff;
+            box-shadow: 0 0 6px #f8fafc;
+        }
+
+        .socket-pip.filled.tier-3 {
+            background: #facc15;
+            border-color: #fef9c3;
+            box-shadow: 0 0 7px #facc15;
+        }
+
+        .tile.seal.unlocked .socket-pip.filled {
+            background: #34d399;
+            border-color: #a7f3d0;
+            box-shadow: 0 0 6px #10b981;
+        }
+
         .seal-req {
-            font-size: 0.66rem;
-            font-weight: 700;
+            font-size: 0.63rem;
+            font-weight: 800;
             color: #fda4af;
-            margin-top: 3px;
-            line-height: 1.1;
+            line-height: 1.05;
+            letter-spacing: -0.2px;
+        }
+
+        .tile.seal.partial .seal-req {
+            color: #fcd34d;
         }
 
         .tile.seal.unlocked .seal-req {
@@ -615,7 +675,6 @@
         return str.trim().toLocaleUpperCase('tr-TR');
     }
 
-    // Durumu Tarayıcı Hafızasına Kaydet
     function saveGameState() {
         const state = {
             currentLevel,
@@ -632,7 +691,6 @@
         }
     }
 
-    // Kayıtlı Oyunu Yükle
     function loadGameState() {
         try {
             const raw = localStorage.getItem(SAVE_KEY);
@@ -654,7 +712,6 @@
             updateUI();
             updateWordPreview();
 
-            // Eğer oyuncu tam bölüm sonu ekranındayken sayfayı kapattıysa sonraki bölümden veya modaldan devam et
             if (isLevelCompleted) {
                 showEndModal(true, true);
             } else if (movesLeft <= 0) {
@@ -678,7 +735,6 @@
         }
     }
 
-    // Tahtadaki mevcut sesli oranına bakarak dengeleyici yeni harf üret
     function generateBalancedLetter(currentGrid, avoidLetter = '') {
         let vowelCount = 0;
         let totalLetters = 0;
@@ -706,7 +762,6 @@
         return candidate;
     }
 
-    // Sonsuz & Kademeli Zorlaşan Bölüm Üretici
     function generateLevelConfig(lvl) {
         const seals = [];
         const candidateSpots = [
@@ -774,7 +829,6 @@
         };
     }
 
-    // Sözlük Yükleme
     async function initDictionary() {
         const statusEl = document.getElementById('dictStatus');
         try {
@@ -819,7 +873,6 @@
         }
     }
 
-    // Bölüm Başlatma
     function initLevel(lvlNumber) {
         currentLevel = lvlNumber;
         const cfg = generateLevelConfig(currentLevel);
@@ -838,6 +891,7 @@
                         isSeal: true,
                         reqTier: sealDef.reqTier,
                         reqCount: sealDef.reqCount,
+                        currentCount: 0,
                         label: sealDef.label,
                         unlocked: false
                     });
@@ -878,6 +932,7 @@
                             }
                         }
                     }
+                    cell.currentCount = Math.min(cell.reqCount, qualifiedNeighbors);
                     cell.unlocked = (qualifiedNeighbors >= cell.reqCount);
                     if (!cell.unlocked) allUnlocked = false;
                 }
@@ -891,6 +946,7 @@
         boardEl.innerHTML = '';
 
         const tierNames = ["", "BRZ", "GMŞ", "ALT"];
+        const sealTierNames = ["", "Bronz", "Gümüş", "Altın"];
 
         for (let r = 0; r < 5; r++) {
             for (let c = 0; c < 5; c++) {
@@ -900,10 +956,25 @@
                 tile.dataset.c = c;
 
                 if (cell.isSeal) {
-                    tile.className = `tile seal ${cell.unlocked ? 'unlocked' : ''}`;
+                    const filledCount = cell.currentCount || 0;
+                    const isPartial = !cell.unlocked && filledCount > 0;
+                    const stateClass = cell.unlocked ? 'unlocked' : (isPartial ? 'partial' : '');
+
+                    // Soket noktalarını (pip) oluştur
+                    let pipsHTML = '';
+                    for (let i = 0; i < cell.reqCount; i++) {
+                        const isFilled = i < filledCount;
+                        pipsHTML += `<span class="socket-pip ${isFilled ? `filled tier-${cell.reqTier}` : ''}"></span>`;
+                    }
+
+                    const tierWord = sealTierNames[cell.reqTier] || '';
+                    const statusLabel = `${filledCount}/${cell.reqCount} ${tierWord}`;
+
+                    tile.className = `tile seal ${stateClass}`;
                     tile.innerHTML = `
                         <span class="seal-icon">${cell.unlocked ? '🔓' : '🔒'}</span>
-                        <span class="seal-req">${cell.label}</span>
+                        <div class="seal-sockets">${pipsHTML}</div>
+                        <span class="seal-req">${statusLabel}</span>
                     `;
                 } else {
                     const isSelected = selectedPath.some(p => p.r === r && p.c === c);
@@ -1190,7 +1261,6 @@
                 const bonus = movesLeft * 50;
                 totalScore += bonus;
 
-                // Her 5. bölümde yeni bir kupa kazanılır
                 if (currentLevel % 5 === 0 && trophies < Math.floor(currentLevel / 5)) {
                     trophies = Math.floor(currentLevel / 5);
                     earnedTrophyNow = true;
@@ -1225,7 +1295,7 @@
         modal.classList.add('active');
     }
 
-    // Başlat: Önce sözlüğü başlat, varsa kayıtlı oyundan devam et
+    // Başlat
     initDictionary();
     if (!loadGameState()) {
         initLevel(1);
