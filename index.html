@@ -148,12 +148,12 @@
         }
 
         .mission-banner {
-            background: rgba(244, 63, 94, 0.12);
-            border: 1px solid rgba(244, 63, 94, 0.3);
-            color: #fda4af;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: #bae6fd;
             padding: 9px 12px;
             border-radius: 10px;
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -210,6 +210,12 @@
         .valid-yes {
             background: rgba(16, 185, 129, 0.18);
             color: #34d399;
+        }
+
+        .valid-bonus {
+            background: rgba(250, 204, 21, 0.2);
+            color: #fde047;
+            border: 1px solid rgba(250, 204, 21, 0.4);
         }
 
         .valid-no {
@@ -279,6 +285,16 @@
             box-shadow: 0 0 18px rgba(250, 204, 21, 0.45), inset 0 1px 4px rgba(255, 255, 255, 0.7);
         }
 
+        /* Simya Patlaması (5+ harf bonusuyla terfi eden taş animasyonu) */
+        @keyframes alchemyPulse {
+            0% { transform: scale(1.14); box-shadow: 0 0 22px #38bdf8; }
+            100% { transform: scale(1); }
+        }
+
+        .tile.blast-upgraded {
+            animation: alchemyPulse 0.55s ease-out;
+        }
+
         /* Mühürlü Kare */
         .tile.seal {
             background: var(--el-seal-bg);
@@ -294,12 +310,12 @@
         }
 
         .seal-icon {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             line-height: 1;
         }
 
         .seal-req {
-            font-size: 0.64rem;
+            font-size: 0.66rem;
             font-weight: 700;
             color: #fda4af;
             margin-top: 3px;
@@ -317,27 +333,15 @@
         }
 
         .tile-letter {
-            font-size: 1.55rem;
+            font-size: 1.7rem;
             font-weight: 800;
             line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        /* Büyütülmüş ve Okunaklı Sonraki Harf İpucu */
-        .tile-next {
-            position: absolute;
-            bottom: 4px;
-            right: 6px;
-            font-size: 0.82rem;
-            font-weight: 800;
-            opacity: 0.9;
-            letter-spacing: -0.3px;
         }
 
         .tile-tier-badge {
             position: absolute;
-            top: 4px;
-            left: 6px;
+            top: 5px;
+            left: 7px;
             font-size: 0.62rem;
             font-weight: 800;
             opacity: 0.88;
@@ -462,7 +466,7 @@
             <div class="metric-pill">Skor: <strong id="scoreDisplay">0</strong></div>
         </div>
         <div class="mission-banner" id="missionBanner">
-            <span>🎯 Hedef: Kilitli mühürlerin komşu karelerini dönüştür!</span>
+            <span>✨ İpucu: 5+ harfli kelimeler komşu bir taşı ekstra parlatır!</span>
         </div>
         <div class="legend-bar">
             <span class="legend-item"><i class="dot" style="background:var(--el-stone-border)"></i>Taş</span>
@@ -500,19 +504,16 @@
     <div class="modal-box">
         <h2 id="modalTitle">Bölüm Tamamlandı!</h2>
         <p id="modalDesc">Tüm mühürler başarıyla çözüldü.</p>
-        <button class="modal-btn" id="modalActionBtn" onclick="nextLevel()">Sonraki Bölüme Geç</button>
+        <button class="modal-btn" id="modalActionBtn">Sonraki Bölüme Geç</button>
     </div>
 </div>
 
 <script>
-    // Akıllı Simya Dönüşüm Döngüleri (Tahtayı kilitlemeyen akıcı harf havuzu)
-    const VOWEL_CYCLE = ['A', 'E', 'İ', 'U', 'O', 'I', 'Ü', 'Ö'];
-    const CONSONANT_CYCLE = ['K', 'L', 'M', 'N', 'R', 'S', 'T', 'Y', 'B', 'D', 'C', 'Ç', 'G', 'P', 'Ş', 'V', 'Z'];
+    // Türkçe harf frekans havuzları (Sesli / Sessiz dengesi için ayrı tutulur)
+    const VOWELS = "AAAAEEEEİİİUUOOIÜÖ";
+    const CONSONANTS = "KKKKLLLLMMMMNNNNRRRRSSSSTTTTYYYYBBBBDDDDÇÇGGPPŞŞVVZZCH";
 
-    // Başlangıç tahtası üretim havuzu (Türkçe frekans dengeli)
-    const WEIGHTED_LETTERS = "AAAEEEİİİUUOOKKKLLLMMMNNNRRRSSSTTTYYYBBDDÇGPŞVZ";
-
-    // Yedek mini sözlük (Dosya henüz yüklenmediyse test edilebilmesi için)
+    // Yedek mini sözlük
     let dictionary = new Set([
         "KUL", "MART", "SEV", "KARA", "MASA", "KASA", "ELMA", "YEL", "SEL", "KEL", "TEL",
         "KOL", "YOL", "SOL", "BOL", "DOL", "GÖL", "ÇÖL", "KÖY", "SÜT", "YÜN", "GÜN", "DÜN",
@@ -522,70 +523,121 @@
     ]);
     let isFullDictLoaded = false;
 
-    // Bölüm Konfigürasyonları
-    const LEVELS = [
-        {
-            level: 1,
-            moves: 8,
-            seals: [
-                { r: 2, c: 2, reqTier: 1, reqCount: 2, label: "2x Bronz" }
-            ]
-        },
-        {
-            level: 2,
-            moves: 10,
-            seals: [
-                { r: 1, c: 1, reqTier: 1, reqCount: 2, label: "2x Bronz" },
-                { r: 3, c: 3, reqTier: 2, reqCount: 1, label: "1x Gümüş" }
-            ]
-        },
-        {
-            level: 3,
-            moves: 12,
-            seals: [
-                { r: 1, c: 3, reqTier: 2, reqCount: 2, label: "2x Gümüş" },
-                { r: 3, c: 1, reqTier: 2, reqCount: 2, label: "2x Gümüş" }
-            ]
-        },
-        {
-            level: 4,
-            moves: 14,
-            seals: [
-                { r: 2, c: 2, reqTier: 3, reqCount: 2, label: "2x Altın" }
-            ]
-        }
-    ];
-
-    let currentLevelIdx = 0;
-    let grid = []; // 5x5 matris objeleri
-    let selectedPath = []; // [{r, c}, ...]
+    let currentLevel = 1;
+    let grid = [];
+    let selectedPath = [];
     let isDragging = false;
-    let dragMoved = false;
     let movesLeft = 8;
     let totalScore = 0;
+    let blastCoord = null; // Simya patlaması animasyonu için koordinat
 
     function normalizeTR(str) {
         return str.trim().toLocaleUpperCase('tr-TR');
     }
 
-    // Harfin bir sonraki simya dönüşümünü bul
-    function getNextLetter(letter) {
-        const vIdx = VOWEL_CYCLE.indexOf(letter);
-        if (vIdx !== -1) {
-            return VOWEL_CYCLE[(vIdx + 1) % VOWEL_CYCLE.length];
+    // Tahtadaki mevcut sesli oranına bakarak dengeleyici yeni harf üret
+    function generateBalancedLetter(currentGrid, avoidLetter = '') {
+        let vowelCount = 0;
+        let totalLetters = 0;
+
+        if (currentGrid && currentGrid.length === 5) {
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    if (currentGrid[r] && currentGrid[r][c] && !currentGrid[r][c].isSeal) {
+                        totalLetters++;
+                        if ("AEIİOÖUÜ".includes(currentGrid[r][c].letter)) {
+                            vowelCount++;
+                        }
+                    }
+                }
+            }
         }
-        const cIdx = CONSONANT_CYCLE.indexOf(letter);
-        if (cIdx !== -1) {
-            return CONSONANT_CYCLE[(cIdx + 1) % CONSONANT_CYCLE.length];
+
+        // Eğer tahtada sesli oranı %36'nın altındaysa sesli harf gelme ihtimalini artır
+        const needVowel = (totalLetters > 0 && (vowelCount / totalLetters) < 0.36);
+        const pool = needVowel ? VOWELS : (Math.random() < 0.42 ? VOWELS : CONSONANTS);
+
+        let candidate = pool[Math.floor(Math.random() * pool.length)];
+        // Aynı hücrede arka arkaya aynı harfin çıkmasını önle
+        if (candidate === avoidLetter) {
+            candidate = pool[(pool.indexOf(candidate) + 1) % pool.length];
         }
-        return 'A';
+        return candidate;
     }
 
-    function getRandomLetter() {
-        return WEIGHTED_LETTERS[Math.floor(Math.random() * WEIGHTED_LETTERS.length)];
+    // Sonsuz & Kademeli Zorlaşan Bölüm Üretici
+    function generateLevelConfig(lvl) {
+        const seals = [];
+        // Mühür aday koordinatları (birbirine yapışık olmayan stratejik noktalar)
+        const candidateSpots = [
+            { r: 2, c: 2 },
+            { r: 1, c: 1 },
+            { r: 3, c: 3 },
+            { r: 1, c: 3 },
+            { r: 3, c: 1 }
+        ];
+
+        // Adayları karıştır
+        const shuffledSpots = [...candidateSpots].sort(() => Math.random() - 0.5);
+
+        if (lvl === 1) {
+            seals.push({ r: 2, c: 2, reqTier: 1, reqCount: 2, label: "2x Bronz" });
+            return { level: lvl, moves: 8, seals };
+        }
+        if (lvl === 2) {
+            seals.push({ r: 1, c: 1, reqTier: 1, reqCount: 2, label: "2x Bronz" });
+            seals.push({ r: 3, c: 3, reqTier: 2, reqCount: 1, label: "1x Gümüş" });
+            return { level: lvl, moves: 10, seals };
+        }
+        if (lvl === 3) {
+            seals.push({ r: 1, c: 3, reqTier: 2, reqCount: 2, label: "2x Gümüş" });
+            seals.push({ r: 3, c: 1, reqTier: 2, reqCount: 2, label: "2x Gümüş" });
+            return { level: lvl, moves: 12, seals };
+        }
+        if (lvl === 4) {
+            seals.push({ r: 2, c: 2, reqTier: 3, reqCount: 2, label: "2x Altın" });
+            return { level: lvl, moves: 13, seals };
+        }
+
+        // 5. Bölümden itibaren dinamik ve artan zorluk
+        const sealCount = Math.min(4, 2 + Math.floor((lvl - 4) / 3)); // 2, 3 veya 4 mühür
+        let baseMoves = 11 + sealCount * 2;
+
+        for (let i = 0; i < sealCount; i++) {
+            const spot = shuffledSpots[i];
+            // Seviye ilerledikçe Gümüş ve Altın talebi artar
+            let reqTier = 2; // Varsayılan Gümüş
+            let reqCount = 2;
+
+            if (lvl >= 6 && i === 0) {
+                reqTier = 3; // Altın
+                reqCount = (lvl >= 9) ? 2 : 1;
+            } else if (lvl >= 8 && i === 1) {
+                reqTier = 3;
+                reqCount = 1;
+            } else {
+                reqTier = 2;
+                reqCount = (lvl >= 7) ? 3 : 2;
+            }
+
+            const tierLabel = reqTier === 1 ? "Bronz" : (reqTier === 2 ? "Gümüş" : "Altın");
+            seals.push({
+                r: spot.r,
+                c: spot.c,
+                reqTier,
+                reqCount,
+                label: `${reqCount}x ${tierLabel}`
+            });
+        }
+
+        return {
+            level: lvl,
+            moves: Math.min(18, baseMoves),
+            seals
+        };
     }
 
-    // Sözlük Yükleme (Otomatik Fetch + Manuel Seçim Desteği)
+    // Sözlük Yükleme
     async function initDictionary() {
         const statusEl = document.getElementById('dictStatus');
         try {
@@ -632,35 +684,41 @@
     }
 
     // Bölüm Başlatma
-    function initLevel(idx) {
-        currentLevelIdx = idx % LEVELS.length;
-        const cfg = LEVELS[currentLevelIdx];
+    function initLevel(lvlNumber) {
+        currentLevel = lvlNumber;
+        const cfg = generateLevelConfig(currentLevel);
         movesLeft = cfg.moves;
         selectedPath = [];
+        blastCoord = null;
 
-        grid = Array.from({ length: 5 }, (_, r) =>
-            Array.from({ length: 5 }, (_, c) => {
+        grid = [];
+        for (let r = 0; r < 5; r++) {
+            const row = [];
+            for (let c = 0; c < 5; c++) {
                 const sealDef = cfg.seals.find(s => s.r === r && s.c === c);
                 if (sealDef) {
-                    return {
+                    row.push({
                         isSeal: true,
                         reqTier: sealDef.reqTier,
                         reqCount: sealDef.reqCount,
                         label: sealDef.label,
                         unlocked: false
-                    };
+                    });
+                } else {
+                    row.push({
+                        isSeal: false,
+                        letter: generateBalancedLetter(grid),
+                        tier: 0
+                    });
                 }
-                return {
-                    isSeal: false,
-                    letter: getRandomLetter(),
-                    tier: 0 // 0: Taş, 1: Bronz, 2: Gümüş, 3: Altın
-                };
-            })
-        );
+            }
+            grid.push(row);
+        }
 
         checkSeals();
         renderBoard();
         updateUI();
+        updateWordPreview();
         document.getElementById('endModal').classList.remove('active');
     }
 
@@ -712,13 +770,12 @@
                     `;
                 } else {
                     const isSelected = selectedPath.some(p => p.r === r && p.c === c);
-                    tile.className = `tile tier-${cell.tier} ${isSelected ? 'selected' : ''}`;
-                    const nextChar = getNextLetter(cell.letter);
+                    const isBlasted = (blastCoord && blastCoord.r === r && blastCoord.c === c);
+                    tile.className = `tile tier-${cell.tier} ${isSelected ? 'selected' : ''} ${isBlasted ? 'blast-upgraded' : ''}`;
 
                     tile.innerHTML = `
                         <span class="tile-tier-badge">${tierNames[cell.tier]}</span>
                         <span class="tile-letter">${cell.letter}</span>
-                        <span class="tile-next">→${nextChar}</span>
                     `;
 
                     tile.addEventListener('mousedown', (e) => startSelection(r, c, e));
@@ -760,7 +817,6 @@
     function startSelection(r, c, e) {
         if (grid[r][c].isSeal) return;
         isDragging = true;
-        dragMoved = false;
 
         const existingIdx = selectedPath.findIndex(p => p.r === r && p.c === c);
 
@@ -784,7 +840,6 @@
     function continueSelection(r, c) {
         if (!isDragging || grid[r][c].isSeal) return;
         if (selectedPath.length === 0) return;
-        dragMoved = true;
 
         const last = selectedPath[selectedPath.length - 1];
         if (selectedPath.length >= 2) {
@@ -835,8 +890,13 @@
             badgeEl.className = "word-validity valid-no";
             submitBtn.disabled = true;
         } else if (dictionary.has(word)) {
-            badgeEl.textContent = "✓ Geçerli Kelime";
-            badgeEl.className = "word-validity valid-yes";
+            if (word.length >= 5) {
+                badgeEl.textContent = "✨ Simya Patlaması (+1 Komşu Terfi!)";
+                badgeEl.className = "word-validity valid-bonus";
+            } else {
+                badgeEl.textContent = "✓ Geçerli Kelime";
+                badgeEl.className = "word-validity valid-yes";
+            }
             submitBtn.disabled = false;
         } else {
             badgeEl.textContent = isFullDictLoaded ? "Sözlükte Yok" : "Sözlük Yüklenmedi";
@@ -850,14 +910,48 @@
         if (word.length < 3 || !dictionary.has(word)) return;
 
         let gainedPoints = word.length * 25;
+        blastCoord = null;
+
+        // 1. Seçilen harfleri yeni dengeli harflere dönüştür ve elementlerini 1 seviye yükselt
         selectedPath.forEach(p => {
             const cell = grid[p.r][p.c];
-            cell.letter = getNextLetter(cell.letter);
+            const oldLetter = cell.letter;
+            cell.letter = generateBalancedLetter(grid, oldLetter);
             if (cell.tier < 3) {
                 cell.tier++;
                 gainedPoints += cell.tier * 15;
             }
         });
+
+        // 2. Uzun Kelime Ödülü (5+ harf): Son harfin etrafındaki henüz Altın olmamış 1 komşuyu ekstra terfi ettir
+        let bonusMsg = "";
+        if (word.length >= 5) {
+            const lastNode = selectedPath[selectedPath.length - 1];
+            const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+            const upgradeableNeighbors = [];
+
+            for (let [dr, dc] of dirs) {
+                const nr = lastNode.r + dr;
+                const nc = lastNode.c + dc;
+                if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) {
+                    const neighbor = grid[nr][nc];
+                    // Seçili yolun dışında kalan ve henüz Altın (3) olmamış bir komşu bul
+                    const inPath = selectedPath.some(p => p.r === nr && p.c === nc);
+                    if (!neighbor.isSeal && !inPath && neighbor.tier < 3) {
+                        upgradeableNeighbors.push({ r: nr, c: nc, cell: neighbor });
+                    }
+                }
+            }
+
+            if (upgradeableNeighbors.length > 0) {
+                // Mührün bitişiğindeki bir komşu varsa ona öncelik ver!
+                const chosen = upgradeableNeighbors[Math.floor(Math.random() * upgradeableNeighbors.length)];
+                chosen.cell.tier++;
+                blastCoord = { r: chosen.r, c: chosen.c };
+                gainedPoints += 60;
+                bonusMsg = " + Simya Patlaması!";
+            }
+        }
 
         totalScore += gainedPoints;
         movesLeft--;
@@ -868,12 +962,12 @@
         updateUI();
         updateWordPreview();
 
-        setFeedback(`"${word}" dönüştürüldü! (+${gainedPoints} Puan)`, "#38bdf8");
+        setFeedback(`"${word}" dönüştürüldü! (+${gainedPoints} Puan${bonusMsg})`, "#38bdf8");
 
         if (allSealsUnlocked) {
-            setTimeout(() => showEndModal(true), 400);
+            setTimeout(() => showEndModal(true), 450);
         } else if (movesLeft <= 0) {
-            setTimeout(() => showEndModal(false), 400);
+            setTimeout(() => showEndModal(false), 450);
         }
     }
 
@@ -884,6 +978,7 @@
         }
         movesLeft--;
         selectedPath = [];
+        blastCoord = null;
 
         const letters = [];
         for (let r = 0; r < 5; r++) {
@@ -909,7 +1004,7 @@
     }
 
     function updateUI() {
-        document.getElementById('levelDisplay').textContent = LEVELS[currentLevelIdx].level;
+        document.getElementById('levelDisplay').textContent = currentLevel;
         document.getElementById('movesDisplay').textContent = movesLeft;
         document.getElementById('scoreDisplay').textContent = totalScore;
     }
@@ -930,29 +1025,25 @@
             const bonus = movesLeft * 50;
             totalScore += bonus;
             updateUI();
-            title.textContent = `Bölüm ${LEVELS[currentLevelIdx].level} Tamamlandı!`;
+            title.textContent = `Bölüm ${currentLevel} Tamamlandı!`;
             title.style.color = "#34d399";
             desc.textContent = `Mühürler çözüldü! Kalan ${movesLeft} hamle için +${bonus} bonus puan kazandın. Toplam Skor: ${totalScore}`;
-            btn.textContent = "Sonraki Bölüme Geç";
-            btn.onclick = () => initLevel(currentLevelIdx + 1);
+            btn.textContent = `Bölüm ${currentLevel + 1}'e Geç`;
+            btn.onclick = () => initLevel(currentLevel + 1);
         } else {
             title.textContent = "Hamle Hakkın Bitti!";
             title.style.color = "#f43f5e";
-            desc.textContent = "Mühürleri açmak için hamlelerin yetmedi. Aynı bölümü tekrar deneyebilirsin.";
+            desc.textContent = `Bölüm ${currentLevel} mühürlerini açmak için hamlelerin yetmedi. Tekrar deneyebilirsin.`;
             btn.textContent = "Bölümü Tekrar Oyna";
-            btn.onclick = () => initLevel(currentLevelIdx);
+            btn.onclick = () => initLevel(currentLevel);
         }
 
         modal.classList.add('active');
     }
 
-    function nextLevel() {
-        initLevel(currentLevelIdx + 1);
-    }
-
     // Başlat
     initDictionary();
-    initLevel(0);
+    initLevel(1);
 </script>
 
 </body>
