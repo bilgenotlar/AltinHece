@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Harf Simyası — 5x5 Stratejik Kelime Oyunu</title>
+    <title>Altın Hece — 5x5 Stratejik Kelime Oyunu</title>
     <style>
         :root {
             --bg-main: #121824;
@@ -12,6 +12,7 @@
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
             --accent-blue: #38bdf8;
+            --accent-gold: #fde047;
             --border-subtle: rgba(148, 163, 184, 0.15);
             --shadow-soft: 0 12px 28px -6px rgba(0, 0, 0, 0.45);
 
@@ -54,7 +55,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 16px;
+            padding: 14px 16px;
         }
 
         .container {
@@ -62,7 +63,40 @@
             max-width: 520px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 13px;
+        }
+
+        /* Üst Stüdyo İmzası */
+        .studio-topbar {
+            text-align: center;
+            padding: 2px 0;
+        }
+
+        .studio-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            background: rgba(27, 36, 54, 0.75);
+            border: 1px solid var(--border-subtle);
+            padding: 5px 14px;
+            border-radius: 999px;
+            transition: all 0.2s ease;
+        }
+
+        .studio-link span {
+            color: var(--accent-blue);
+        }
+
+        .studio-link:hover {
+            color: var(--text-primary);
+            border-color: rgba(56, 189, 248, 0.45);
+            background: var(--bg-card);
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.15);
         }
 
         /* Header */
@@ -78,9 +112,9 @@
         }
 
         .brand h1 {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            color: var(--accent-blue);
+            color: var(--accent-gold);
             letter-spacing: 0.4px;
         }
 
@@ -396,7 +430,7 @@
             animation: alchemyPulse 0.55s ease-out;
         }
 
-        /* Mühürlü Kare — Seçenek 3 (Soket Noktaları + Kenarlık İlerlemesi + Dinamik Sayaç) */
+        /* Mühürlü Kare — Seçenek 3 */
         .tile.seal {
             background: var(--el-seal-bg);
             border: 2px dashed var(--el-seal-border);
@@ -620,9 +654,16 @@
 <body>
 
 <div class="container">
+    <!-- Stüdyo İmzası -->
+    <div class="studio-topbar">
+        <a href="https://maviblue.win" target="_blank" rel="noopener noreferrer" class="studio-link">
+            <span>MaviBlue</span> Stüdyo Sunar
+        </a>
+    </div>
+
     <header>
         <div class="brand">
-            <h1>Harf Simyası</h1>
+            <h1>Altın Hece</h1>
             <span>Dönüşen Matris Kelime Bulmacası</span>
         </div>
         <div class="header-actions">
@@ -692,7 +733,8 @@
 </div>
 
 <script>
-    const SAVE_KEY = "harf_simyasi_save_v1";
+    const SAVE_KEY = "altin_hece_save_v1";
+    const LEGACY_SAVE_KEY = "harf_simyasi_save_v1";
 
     const VOWELS = "AAAAEEEEİİİUUOOIÜÖ";
     const CONSONANTS = "KKKKLLLLMMMMNNNNRRRRSSSSTTTTYYYYBBBBDDDDÇÇGGPPŞŞVVZZCH";
@@ -742,7 +784,7 @@
 
     function loadGameState() {
         try {
-            const raw = localStorage.getItem(SAVE_KEY);
+            const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
             if (!raw) return false;
             const state = JSON.parse(raw);
             if (!state || !state.grid || state.grid.length !== 5) return false;
@@ -782,6 +824,7 @@
     function confirmResetProgress() {
         if (confirm("Mevcut ilerlemeni, skorunu ve kupalarını sıfırlayıp Bölüm 1'den başlamak istiyor musun?")) {
             localStorage.removeItem(SAVE_KEY);
+            localStorage.removeItem(LEGACY_SAVE_KEY);
             totalScore = 0;
             trophies = 0;
             initLevel(1);
@@ -1269,7 +1312,6 @@
         }
     }
 
-    // 1. Yöntem: Ekranı karartmadan zafer durumuna geçiş
     function enterVictoryState(fromRestore = false) {
         const previewBar = document.getElementById('wordPreviewBar');
         const controlsRow = document.getElementById('controlsRow');
@@ -1282,7 +1324,7 @@
                 <span class="word-validity valid-bonus">+${lastLevelBonus} Bonus</span>
             `;
             trophyShelf.classList.add('celebrate-trophy');
-            setFeedback(`Tebrikler! ${trophies}. Altın Simya Kupasını kazandın! Tahtanı inceleyip devam edebilirsin.`, "#fde047");
+            setFeedback(`Tebrikler! ${trophies}. Altın Hece Kupasını kazandın! Tahtanı inceleyip devam edebilirsin.`, "#fde047");
         } else {
             previewBar.className = 'word-preview-bar victory-bar';
             previewBar.innerHTML = `
@@ -1293,7 +1335,6 @@
             setFeedback("Tüm mühürler çözüldü! Tahtanı inceleyebilir veya sonraki bölüme geçebilirsin.", "#34d399");
         }
 
-        // Alt kontrol çubuğunu tek geniş "Sonraki Bölüme Geç" butonuna dönüştür
         controlsRow.className = 'controls-row next-level-mode';
         controlsRow.innerHTML = `
             <button class="btn-next-level" onclick="initLevel(${currentLevel + 1})">
