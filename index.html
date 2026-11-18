@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Harf Simyası — 5x5 Stratejik Kelime Oyunu</title>
+    <style>
+        :root {
+            --bg-main: #121824;
+            --bg-card: #1b2436;
+            --bg-elevated: #232f46;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --border-subtle: rgba(148, 163, 184, 0.15);
+            --shadow-soft: 0 12px 28px -6px rgba(0, 0, 0, 0.45);
+
+            /* Element Renkleri */
+            --el-stone-bg: #1e2738;
+            --el-stone-border: #2e3b52;
+
+            /* Bronz: Koyu Kızıl Bakır */
+            --el-bronze-bg: #542318;
+            --el-bronze-border: #ea580c;
+            --el-bronze-text: #fdba74;
+
+            /* Gümüş: Parlak Platin Metalik */
+            --el-silver-bg: linear-gradient(145deg, #64748b 0%, #cbd5e1 100%);
+            --el-silver-border: #f8fafc;
+            --el-silver-text: #0f172a;
+
+            /* Altın: Parlak Saf Altın Metalik */
+            --el-gold-bg: linear-gradient(145deg, #d97706 0%, #fde047 100%);
+            --el-gold-border: #fef9c3;
+            --el-gold-text: #271704;
+
+            --el-seal-bg: #3b1826;
+            --el-seal-border: #f43f5e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            letter-spacing: 0.4px;
+        }
+
+        .brand span {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .dict-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+        }
+
+        .dict-status.ready {
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .file-upload-btn {
+            background: var(--accent-blue);
+            color: #0f172a;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        /* Mission & Stats */
+        .status-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .top-metrics {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.88rem;
+        }
+
+        .metric-pill {
+            background: var(--bg-elevated);
+            padding: 5px 12px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+        }
+
+        .metric-pill strong {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .mission-banner {
+            background: rgba(244, 63, 94, 0.12);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: #fda4af;
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .legend-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            padding: 2px 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* Current Word Display */
+        .word-preview-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+        }
+
+        .current-word-text {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--accent-blue);
+        }
+
+        .word-validity {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        .valid-yes {
+            background: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+        }
+
+        .valid-no {
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-secondary);
+        }
+
+        /* 5x5 Grid Board */
+        .board-wrapper {
+            position: relative;
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-soft);
+            touch-action: none;
+        }
+
+        .grid-5x5 {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tile {
+            aspect-ratio: 1 / 1;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.25s ease;
+            border: 2px solid transparent;
+        }
+
+        /* Seviye 0: Taş */
+        .tile.tier-0 {
+            background: var(--el-stone-bg);
+            border-color: var(--el-stone-border);
+            color: var(--text-primary);
+        }
+
+        /* Seviye 1: Bronz (Kızıl Bakır) */
+        .tile.tier-1 {
+            background: var(--el-bronze-bg);
+            border-color: var(--el-bronze-border);
+            color: var(--el-bronze-text);
+        }
+
+        /* Seviye 2: Gümüş (Parlak Platin Yüzey & Koyu Harf Kontrastı) */
+        .tile.tier-2 {
+            background: var(--el-silver-bg);
+            border-color: var(--el-silver-border);
+            color: var(--el-silver-text);
+            box-shadow: 0 0 14px rgba(226, 232, 240, 0.3), inset 0 1px 4px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Seviye 3: Altın (Parlak Altın Yüzey & Koyu Harf Kontrastı) */
+        .tile.tier-3 {
+            background: var(--el-gold-bg);
+            border-color: var(--el-gold-border);
+            color: var(--el-gold-text);
+            box-shadow: 0 0 18px rgba(250, 204, 21, 0.45), inset 0 1px 4px rgba(255, 255, 255, 0.7);
+        }
+
+        /* Mühürlü Kare */
+        .tile.seal {
+            background: var(--el-seal-bg);
+            border: 2px dashed var(--el-seal-border);
+            cursor: default;
+            padding: 4px;
+            text-align: center;
+        }
+
+        .tile.seal.unlocked {
+            background: rgba(16, 185, 129, 0.15);
+            border: 2px solid #10b981;
+        }
+
+        .seal-icon {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .seal-req {
+            font-size: 0.64rem;
+            font-weight: 700;
+            color: #fda4af;
+            margin-top: 3px;
+            line-height: 1.1;
+        }
+
+        .tile.seal.unlocked .seal-req {
+            color: #6ee7b7;
+        }
+
+        .tile.selected {
+            transform: scale(0.92);
+            box-shadow: 0 0 0 3px var(--accent-blue), 0 6px 16px rgba(56, 189, 248, 0.45);
+            z-index: 5;
+        }
+
+        .tile-letter {
+            font-size: 1.55rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        /* Büyütülmüş ve Okunaklı Sonraki Harf İpucu */
+        .tile-next {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            opacity: 0.9;
+            letter-spacing: -0.3px;
+        }
+
+        .tile-tier-badge {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 0.62rem;
+            font-weight: 800;
+            opacity: 0.88;
+        }
+
+        /* Action Buttons */
+        .controls-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 8px;
+        }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 10px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        button:active { transform: scale(0.96); }
+
+        .btn-clear {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-submit {
+            background: var(--accent-blue);
+            color: #0f172a;
+            font-size: 0.95rem;
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-shuffle {
+            background: var(--bg-elevated);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.25);
+        }
+
+        .feedback-line {
+            text-align: center;
+            font-size: 0.84rem;
+            min-height: 22px;
+            color: var(--text-secondary);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 15, 24, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .modal-box h2 {
+            color: var(--accent-blue);
+            font-size: 1.4rem;
+        }
+
+        .modal-box p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .modal-btn {
+            background: #10b981;
+            color: #064e3b;
+            padding: 12px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand">
+            <h1>Harf Simyası</h1>
+            <span>Dönüşen Matris Kelime Bulmacası</span>
+        </div>
+        <div class="dict-status" id="dictStatus">
+            <span>Sözlük aranıyor...</span>
+        </div>
+    </header>
+
+    <div class="status-panel">
+        <div class="top-metrics">
+            <div class="metric-pill">Bölüm: <strong id="levelDisplay">1</strong></div>
+            <div class="metric-pill">Kalan Hamle: <strong id="movesDisplay">8</strong></div>
+            <div class="metric-pill">Skor: <strong id="scoreDisplay">0</strong></div>
+        </div>
+        <div class="mission-banner" id="missionBanner">
+            <span>🎯 Hedef: Kilitli mühürlerin komşu karelerini dönüştür!</span>
+        </div>
+        <div class="legend-bar">
+            <span class="legend-item"><i class="dot" style="background:var(--el-stone-border)"></i>Taş</span>
+            <span class="legend-item">➔</span>
+            <span class="legend-item"><i class="dot" style="background:var(--el-bronze-border)"></i>Bronz</span>
+            <span class="legend-item">➔</span>
+            <span class="legend-item"><i class="dot" style="background:#cbd5e1"></i>Gümüş</span>
+            <span class="legend-item">➔</span>
+            <span class="legend-item"><i class="dot" style="background:#fde047"></i>Altın</span>
+        </div>
+    </div>
+
+    <div class="word-preview-bar">
+        <span class="current-word-text" id="currentWordDisplay">...</span>
+        <span class="word-validity valid-no" id="wordValidityBadge">En az 3 harf</span>
+    </div>
+
+    <div class="board-wrapper" id="boardWrapper">
+        <div class="grid-5x5" id="gridBoard"></div>
+    </div>
+
+    <div class="feedback-line" id="feedbackLine">
+        Harflerin üzerinden sürükleyerek veya sırayla tıklayarak kelime kur.
+    </div>
+
+    <div class="controls-row">
+        <button class="btn-clear" onclick="clearSelection()">Temizle</button>
+        <button class="btn-submit" id="submitBtn" onclick="submitWord()" disabled>Dönüştür (Onayla)</button>
+        <button class="btn-shuffle" onclick="alchemyShuffle()">Karıştır (-1 Hamle)</button>
+    </div>
+</div>
+
+<!-- Bölüm Sonu Modalı -->
+<div class="modal-overlay" id="endModal">
+    <div class="modal-box">
+        <h2 id="modalTitle">Bölüm Tamamlandı!</h2>
+        <p id="modalDesc">Tüm mühürler başarıyla çözüldü.</p>
+        <button class="modal-btn" id="modalActionBtn" onclick="nextLevel()">Sonraki Bölüme Geç</button>
+    </div>
+</div>
+
+<script>
+    // Akıllı Simya Dönüşüm Döngüleri (Tahtayı kilitlemeyen akıcı harf havuzu)
+    const VOWEL_CYCLE = ['A', 'E', 'İ', 'U', 'O', 'I', 'Ü', 'Ö'];
+    const CONSONANT_CYCLE = ['K', 'L', 'M', 'N', 'R', 'S', 'T', 'Y', 'B', 'D', 'C', 'Ç', 'G', 'P', 'Ş', 'V', 'Z'];
+
+    // Başlangıç tahtası üretim havuzu (Türkçe frekans dengeli)
+    const WEIGHTED_LETTERS = "AAAEEEİİİUUOOKKKLLLMMMNNNRRRSSSTTTYYYBBDDÇGPŞVZ";
+
+    // Yedek mini sözlük (Dosya henüz yüklenmediyse test edilebilmesi için)
+    let dictionary = new Set([
+        "KUL", "MART", "SEV", "KARA", "MASA", "KASA", "ELMA", "YEL", "SEL", "KEL", "TEL",
+        "KOL", "YOL", "SOL", "BOL", "DOL", "GÖL", "ÇÖL", "KÖY", "SÜT", "YÜN", "GÜN", "DÜN",
+        "TAŞ", "KAŞ", "BAŞ", "YAŞ", "KUŞ", "KIŞ", "DIŞ", "İŞ", "AŞK", "ŞARK", "PARK", "FARK",
+        "KALEM", "KİTAP", "DENİZ", "GÜNEŞ", "YILDIZ", "BULUT", "TOPRAK", "ORMAN", "ÇİÇEK", "BÖCEK",
+        "SÖZ", "GÖZ", "KÖZ", "ÖZ", "YÜZ", "DÜZ", "GÜZ", "BÜZ", "SÜZ", "ÜZÜM", "ÇÖZÜM", "ÖLÜM"
+    ]);
+    let isFullDictLoaded = false;
+
+    // Bölüm Konfigürasyonları
+    const LEVELS = [
+        {
+            level: 1,
+            moves: 8,
+            seals: [
+                { r: 2, c: 2, reqTier: 1, reqCount: 2, label: "2x Bronz" }
+            ]
+        },
+        {
+            level: 2,
+            moves: 10,
+            seals: [
+                { r: 1, c: 1, reqTier: 1, reqCount: 2, label: "2x Bronz" },
+                { r: 3, c: 3, reqTier: 2, reqCount: 1, label: "1x Gümüş" }
+            ]
+        },
+        {
+            level: 3,
+            moves: 12,
+            seals: [
+                { r: 1, c: 3, reqTier: 2, reqCount: 2, label: "2x Gümüş" },
+                { r: 3, c: 1, reqTier: 2, reqCount: 2, label: "2x Gümüş" }
+            ]
+        },
+        {
+            level: 4,
+            moves: 14,
+            seals: [
+                { r: 2, c: 2, reqTier: 3, reqCount: 2, label: "2x Altın" }
+            ]
+        }
+    ];
+
+    let currentLevelIdx = 0;
+    let grid = []; // 5x5 matris objeleri
+    let selectedPath = []; // [{r, c}, ...]
+    let isDragging = false;
+    let dragMoved = false;
+    let movesLeft = 8;
+    let totalScore = 0;
+
+    function normalizeTR(str) {
+        return str.trim().toLocaleUpperCase('tr-TR');
+    }
+
+    // Harfin bir sonraki simya dönüşümünü bul
+    function getNextLetter(letter) {
+        const vIdx = VOWEL_CYCLE.indexOf(letter);
+        if (vIdx !== -1) {
+            return VOWEL_CYCLE[(vIdx + 1) % VOWEL_CYCLE.length];
+        }
+        const cIdx = CONSONANT_CYCLE.indexOf(letter);
+        if (cIdx !== -1) {
+            return CONSONANT_CYCLE[(cIdx + 1) % CONSONANT_CYCLE.length];
+        }
+        return 'A';
+    }
+
+    function getRandomLetter() {
+        return WEIGHTED_LETTERS[Math.floor(Math.random() * WEIGHTED_LETTERS.length)];
+    }
+
+    // Sözlük Yükleme (Otomatik Fetch + Manuel Seçim Desteği)
+    async function initDictionary() {
+        const statusEl = document.getElementById('dictStatus');
+        try {
+            const response = await fetch('turkce_kelime_listesi.txt');
+            if (!response.ok) throw new Error("Dosya fetch edilemedi");
+            const text = await response.text();
+            parseDictionaryText(text);
+        } catch (err) {
+            statusEl.innerHTML = `
+                <label class="file-upload-btn" for="txtFileInput">📂 Sözlük Seç (.txt)</label>
+                <input type="file" id="txtFileInput" accept=".txt" style="display:none" onchange="handleManualFile(event)">
+            `;
+        }
+    }
+
+    function handleManualFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            parseDictionaryText(e.target.result);
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseDictionaryText(rawText) {
+        const lines = rawText.split(/\r?\n/);
+        const newSet = new Set();
+        for (let line of lines) {
+            const clean = normalizeTR(line);
+            if (clean.length >= 3 && clean.length <= 9 && /^[A-ZÇĞİÖŞÜ]+$/.test(clean)) {
+                newSet.add(clean);
+            }
+        }
+        if (newSet.size > 100) {
+            dictionary = newSet;
+            isFullDictLoaded = true;
+            const statusEl = document.getElementById('dictStatus');
+            statusEl.className = 'dict-status ready';
+            statusEl.innerHTML = `✓ ${dictionary.size.toLocaleString('tr-TR')} Kelime Aktif`;
+            setFeedback("TDK sözlüğü yüklendi! Simyaya başlayabilirsin.", "#34d399");
+            updateWordPreview();
+        }
+    }
+
+    // Bölüm Başlatma
+    function initLevel(idx) {
+        currentLevelIdx = idx % LEVELS.length;
+        const cfg = LEVELS[currentLevelIdx];
+        movesLeft = cfg.moves;
+        selectedPath = [];
+
+        grid = Array.from({ length: 5 }, (_, r) =>
+            Array.from({ length: 5 }, (_, c) => {
+                const sealDef = cfg.seals.find(s => s.r === r && s.c === c);
+                if (sealDef) {
+                    return {
+                        isSeal: true,
+                        reqTier: sealDef.reqTier,
+                        reqCount: sealDef.reqCount,
+                        label: sealDef.label,
+                        unlocked: false
+                    };
+                }
+                return {
+                    isSeal: false,
+                    letter: getRandomLetter(),
+                    tier: 0 // 0: Taş, 1: Bronz, 2: Gümüş, 3: Altın
+                };
+            })
+        );
+
+        checkSeals();
+        renderBoard();
+        updateUI();
+        document.getElementById('endModal').classList.remove('active');
+    }
+
+    // Mühürlerin çevresindeki komşuları kontrol et
+    function checkSeals() {
+        let allUnlocked = true;
+        const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                const cell = grid[r][c];
+                if (cell.isSeal) {
+                    let qualifiedNeighbors = 0;
+                    for (let [dr, dc] of dirs) {
+                        const nr = r + dr, nc = c + dc;
+                        if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) {
+                            const neighbor = grid[nr][nc];
+                            if (!neighbor.isSeal && neighbor.tier >= cell.reqTier) {
+                                qualifiedNeighbors++;
+                            }
+                        }
+                    }
+                    cell.unlocked = (qualifiedNeighbors >= cell.reqCount);
+                    if (!cell.unlocked) allUnlocked = false;
+                }
+            }
+        }
+        return allUnlocked;
+    }
+
+    function renderBoard() {
+        const boardEl = document.getElementById('gridBoard');
+        boardEl.innerHTML = '';
+
+        const tierNames = ["", "BRZ", "GMŞ", "ALT"];
+
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                const cell = grid[r][c];
+                const tile = document.createElement('div');
+                tile.dataset.r = r;
+                tile.dataset.c = c;
+
+                if (cell.isSeal) {
+                    tile.className = `tile seal ${cell.unlocked ? 'unlocked' : ''}`;
+                    tile.innerHTML = `
+                        <span class="seal-icon">${cell.unlocked ? '🔓' : '🔒'}</span>
+                        <span class="seal-req">${cell.label}</span>
+                    `;
+                } else {
+                    const isSelected = selectedPath.some(p => p.r === r && p.c === c);
+                    tile.className = `tile tier-${cell.tier} ${isSelected ? 'selected' : ''}`;
+                    const nextChar = getNextLetter(cell.letter);
+
+                    tile.innerHTML = `
+                        <span class="tile-tier-badge">${tierNames[cell.tier]}</span>
+                        <span class="tile-letter">${cell.letter}</span>
+                        <span class="tile-next">→${nextChar}</span>
+                    `;
+
+                    tile.addEventListener('mousedown', (e) => startSelection(r, c, e));
+                    tile.addEventListener('mouseenter', () => continueSelection(r, c));
+                }
+                boardEl.appendChild(tile);
+            }
+        }
+    }
+
+    // Dokunmatik ekran sürükleme desteği
+    const boardWrapper = document.getElementById('boardWrapper');
+    boardWrapper.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.tile');
+        if (target && target.dataset.r !== undefined) {
+            e.preventDefault();
+            startSelection(parseInt(target.dataset.r), parseInt(target.dataset.c), e);
+        }
+    }, { passive: false });
+
+    boardWrapper.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.tile');
+        if (target && target.dataset.r !== undefined) {
+            continueSelection(parseInt(target.dataset.r), parseInt(target.dataset.c));
+        }
+    }, { passive: false });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    function isAdjacent(p1, p2) {
+        return Math.abs(p1.r - p2.r) <= 1 && Math.abs(p1.c - p2.c) <= 1 && !(p1.r === p2.r && p1.c === p2.c);
+    }
+
+    function startSelection(r, c, e) {
+        if (grid[r][c].isSeal) return;
+        isDragging = true;
+        dragMoved = false;
+
+        const existingIdx = selectedPath.findIndex(p => p.r === r && p.c === c);
+
+        if (existingIdx !== -1) {
+            if (existingIdx === selectedPath.length - 1) {
+                selectedPath.pop();
+            } else {
+                selectedPath = selectedPath.slice(0, existingIdx);
+            }
+            isDragging = false;
+        } else if (selectedPath.length > 0 && isAdjacent(selectedPath[selectedPath.length - 1], { r, c })) {
+            selectedPath.push({ r, c });
+        } else {
+            selectedPath = [{ r, c }];
+        }
+
+        renderBoard();
+        updateWordPreview();
+    }
+
+    function continueSelection(r, c) {
+        if (!isDragging || grid[r][c].isSeal) return;
+        if (selectedPath.length === 0) return;
+        dragMoved = true;
+
+        const last = selectedPath[selectedPath.length - 1];
+        if (selectedPath.length >= 2) {
+            const prev = selectedPath[selectedPath.length - 2];
+            if (prev.r === r && prev.c === c) {
+                selectedPath.pop();
+                renderBoard();
+                updateWordPreview();
+                return;
+            }
+        }
+
+        if (!selectedPath.some(p => p.r === r && p.c === c) && isAdjacent(last, { r, c })) {
+            selectedPath.push({ r, c });
+            renderBoard();
+            updateWordPreview();
+        }
+    }
+
+    function clearSelection() {
+        selectedPath = [];
+        renderBoard();
+        updateWordPreview();
+    }
+
+    function getCurrentWord() {
+        return selectedPath.map(p => grid[p.r][p.c].letter).join('');
+    }
+
+    function updateWordPreview() {
+        const word = getCurrentWord();
+        const wordEl = document.getElementById('currentWordDisplay');
+        const badgeEl = document.getElementById('wordValidityBadge');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (word.length === 0) {
+            wordEl.textContent = "...";
+            badgeEl.textContent = "En az 3 harf";
+            badgeEl.className = "word-validity valid-no";
+            submitBtn.disabled = true;
+            return;
+        }
+
+        wordEl.textContent = word;
+
+        if (word.length < 3) {
+            badgeEl.textContent = `${3 - word.length} harf daha`;
+            badgeEl.className = "word-validity valid-no";
+            submitBtn.disabled = true;
+        } else if (dictionary.has(word)) {
+            badgeEl.textContent = "✓ Geçerli Kelime";
+            badgeEl.className = "word-validity valid-yes";
+            submitBtn.disabled = false;
+        } else {
+            badgeEl.textContent = isFullDictLoaded ? "Sözlükte Yok" : "Sözlük Yüklenmedi";
+            badgeEl.className = "word-validity valid-no";
+            submitBtn.disabled = true;
+        }
+    }
+
+    function submitWord() {
+        const word = getCurrentWord();
+        if (word.length < 3 || !dictionary.has(word)) return;
+
+        let gainedPoints = word.length * 25;
+        selectedPath.forEach(p => {
+            const cell = grid[p.r][p.c];
+            cell.letter = getNextLetter(cell.letter);
+            if (cell.tier < 3) {
+                cell.tier++;
+                gainedPoints += cell.tier * 15;
+            }
+        });
+
+        totalScore += gainedPoints;
+        movesLeft--;
+        selectedPath = [];
+
+        const allSealsUnlocked = checkSeals();
+        renderBoard();
+        updateUI();
+        updateWordPreview();
+
+        setFeedback(`"${word}" dönüştürüldü! (+${gainedPoints} Puan)`, "#38bdf8");
+
+        if (allSealsUnlocked) {
+            setTimeout(() => showEndModal(true), 400);
+        } else if (movesLeft <= 0) {
+            setTimeout(() => showEndModal(false), 400);
+        }
+    }
+
+    function alchemyShuffle() {
+        if (movesLeft <= 1) {
+            setFeedback("Karıştırmak için en az 2 hamle hakkın olmalı!", "#f43f5e");
+            return;
+        }
+        movesLeft--;
+        selectedPath = [];
+
+        const letters = [];
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                if (!grid[r][c].isSeal) letters.push(grid[r][c].letter);
+            }
+        }
+        for (let i = letters.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [letters[i], letters[j]] = [letters[j], letters[i]];
+        }
+        let idx = 0;
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                if (!grid[r][c].isSeal) grid[r][c].letter = letters[idx++];
+            }
+        }
+
+        renderBoard();
+        updateUI();
+        updateWordPreview();
+        setFeedback("Simya karıştırması uygulandı! Element seviyeleri korundu.", "#fbbf24");
+    }
+
+    function updateUI() {
+        document.getElementById('levelDisplay').textContent = LEVELS[currentLevelIdx].level;
+        document.getElementById('movesDisplay').textContent = movesLeft;
+        document.getElementById('scoreDisplay').textContent = totalScore;
+    }
+
+    function setFeedback(msg, color = "#94a3b8") {
+        const el = document.getElementById('feedbackLine');
+        el.textContent = msg;
+        el.style.color = color;
+    }
+
+    function showEndModal(isWin) {
+        const modal = document.getElementById('endModal');
+        const title = document.getElementById('modalTitle');
+        const desc = document.getElementById('modalDesc');
+        const btn = document.getElementById('modalActionBtn');
+
+        if (isWin) {
+            const bonus = movesLeft * 50;
+            totalScore += bonus;
+            updateUI();
+            title.textContent = `Bölüm ${LEVELS[currentLevelIdx].level} Tamamlandı!`;
+            title.style.color = "#34d399";
+            desc.textContent = `Mühürler çözüldü! Kalan ${movesLeft} hamle için +${bonus} bonus puan kazandın. Toplam Skor: ${totalScore}`;
+            btn.textContent = "Sonraki Bölüme Geç";
+            btn.onclick = () => initLevel(currentLevelIdx + 1);
+        } else {
+            title.textContent = "Hamle Hakkın Bitti!";
+            title.style.color = "#f43f5e";
+            desc.textContent = "Mühürleri açmak için hamlelerin yetmedi. Aynı bölümü tekrar deneyebilirsin.";
+            btn.textContent = "Bölümü Tekrar Oyna";
+            btn.onclick = () => initLevel(currentLevelIdx);
+        }
+
+        modal.classList.add('active');
+    }
+
+    function nextLevel() {
+        initLevel(currentLevelIdx + 1);
+    }
+
+    // Başlat
+    initDictionary();
+    initLevel(0);
+</script>
+
+</body>
+</html>
